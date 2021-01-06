@@ -658,7 +658,11 @@ namespace RandomStartingDungeon
             {
                 for (int n = 0; n < 62; n++)
                 {
+
                     regionInfo = DaggerfallUnity.Instance.ContentReader.MapFileReader.GetRegion(n);
+                    Debug.Log($"** Random Dungeon - {n} = {regionInfo.Name} **");
+                    if (!(n == 17 || n == 21 || n == 42 || n == 58 || n == 59))
+                        continue;
                     if (regionInfo.LocationCount <= 0) // Add the if-statements to keep "invalid" regions from being put into grab-bag, also use this for some settings.
                         continue;
                     if (n == 31) // Index for "High Rock sea coast" or the "region" that holds the location of the two player boats, as well as the Mantellan Crux story dungeon.
