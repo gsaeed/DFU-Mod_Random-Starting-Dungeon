@@ -734,7 +734,11 @@ namespace RandomStartingDungeon
                         spawnPointGlobal = spawnPoint;
                     }
                     else
+                    {
                         Debug.Log("Transformation Failed, Could Not Find Valid Dungeon Position.");
+                        PickRandomDungeonTeleport();
+                        return;
+                    }
 
                     // Spawn inside dungeon at this world position
                     DFPosition mapPixel = MapsFile.LongitudeLatitudeToMapPixel(dungLocation.MapTableData.Longitude, dungLocation.MapTableData.Latitude);
