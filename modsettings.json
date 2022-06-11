@@ -225,7 +225,7 @@
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
                 },
-                {
+				               {
                     "Value": true,
                     "Name": "orcStronghold",
                     "Description": "Allows Being Spawned In Dungeons Of Type Orc Stronghold || Default = True",

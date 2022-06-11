@@ -140,13 +140,14 @@ namespace RandomStartingDungeon
             bool humanStrongholdDungs = settings.GetBool("DungeonTypeOptions", "humanStronghold");
             bool orcStrongholdDungs = settings.GetBool("DungeonTypeOptions", "orcStronghold");
             bool cryptDungs = settings.GetBool("DungeonTypeOptions", "crypt");
-
+            
             // Starting Date Options
             bool randomStartDate = settings.GetBool("StartDateOptions", "randomStartingDate");
             bool winter = settings.GetBool("StartDateOptions", "winterMonths");
             bool spring = settings.GetBool("StartDateOptions", "springMonths");
             bool summer = settings.GetBool("StartDateOptions", "summerMonths");
             bool fall = settings.GetBool("StartDateOptions", "fallMonths");
+
 
             // Misc Options
             int safeZoneSize = settings.GetInt("MiscOptions", "safeZone");
@@ -157,7 +158,7 @@ namespace RandomStartingDungeon
                 ruinedCastleDungs, harpyNestDungs, laboratoryDungs, vampireHauntDungs, covenDungs, naturalCaveDungs, mineDungs, desecratedTempleDungs,
                 prisonDungs, humanStrongholdDungs, orcStrongholdDungs, cryptDungs, randomStartDate, winter, spring, summer, fall, safeZoneSize);
 
-            mod.IsReady = true;
+                mod.IsReady = true;
         }
 		
 		private void Start()
@@ -173,7 +174,7 @@ namespace RandomStartingDungeon
             bool dragonsDenDungs, bool giantStrongholdDungs, bool spiderNestDungs, bool ruinedCastleDungs, bool harpyNestDungs, bool laboratoryDungs,
             bool vampireHauntDungs, bool covenDungs, bool naturalCaveDungs, bool mineDungs, bool desecratedTempleDungs, bool prisonDungs,
             bool humanStrongholdDungs, bool orcStrongholdDungs, bool cryptDungs, bool randomStartDate, bool winter, bool spring, bool summer, bool fall, int safeZoneSize)
-        {
+            {
             Debug.Log("Begin mod init: RandomStartingDungeon");
 
             // Region Specific and Quest Dungeon Options
@@ -658,7 +659,6 @@ namespace RandomStartingDungeon
             {
                 for (int n = 0; n < 62; n++)
                 {
-
                     regionInfo = DaggerfallUnity.Instance.ContentReader.MapFileReader.GetRegion(n);
                     Debug.Log($"** Random Dungeon - {n} = {regionInfo.Name} **");
                     if (!(n == 17 || n == 21 || n == 42 || n == 58 || n == 59))
