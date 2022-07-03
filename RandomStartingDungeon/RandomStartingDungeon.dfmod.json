@@ -9,6 +9,8 @@
     "Files": [
         "Assets/Game/Mods/RandomStartingDungeon/modsettings.json",
         "Assets/Game/Mods/RandomStartingDungeon/Scripts/RandomStartingDungeon.cs",
-        "Assets/Game/Mods/RandomStartingDungeon/Scripts/RandomStartingDungeonConsoleCommands.cs"
-    ]
+        "Assets/Game/Mods/RandomStartingDungeon/Scripts/RandomStartingDungeonConsoleCommands.cs",
+        "Assets/Game/Mods/RandomStartingDungeon/RandomStartingDungeon.dfmod.json"
+    ],
+    "ModPreCompile": true
 }
