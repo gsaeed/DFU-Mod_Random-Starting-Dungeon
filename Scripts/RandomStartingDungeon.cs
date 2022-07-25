@@ -791,7 +791,10 @@ namespace RandomStartingDungeon
                                 EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
                                 if (!enemySenses.QuestBehaviour && enemyEntity.MobileEnemy.Team != MobileTeams.PlayerAlly)
                                 {
-                                    Destroy(entityBehaviour.gameObject);
+                                    if (Dice100.SuccessRoll(25))
+                                        Destroy(entityBehaviour.gameObject);
+                                    else
+                                        entityBehaviour.Entity.SetHealth(0);
                                 }
                             }
                         }
