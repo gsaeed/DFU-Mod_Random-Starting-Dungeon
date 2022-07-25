@@ -225,7 +225,7 @@
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
                 },
-				               {
+                {
                     "Value": true,
                     "Name": "orcStronghold",
                     "Description": "Allows Being Spawned In Dungeons Of Type Orc Stronghold || Default = True",
@@ -242,7 +242,7 @@
             ],
             "$version": "v1"
         },
-		{
+        {
             "Name": "StartDateOptions",
             "Description": "Settings For If You Want To Start New Games With A Random Date",
             "IsAdvanced": false,
@@ -285,7 +285,7 @@
             ],
             "$version": "v1"
         },
-		{
+        {
             "Name": "MiscOptions",
             "Description": "Settings For Miscellaneous Things",
             "IsAdvanced": false,
@@ -296,6 +296,15 @@
                     "Value": 30,
                     "Name": "safeZone",
                     "Description": "Default = 30 || Changes Size Of Safe Zone Cleared Of Enemies Upon Spawning. 0 = Disabled, 200 = Huge",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 0,
+                    "Max": 100,
+                    "Value": 75,
+                    "Name": "ChanceCorpse",
+                    "Description": "Chance for a corpse to appear rather than clearing the enemy entirely",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
                 }

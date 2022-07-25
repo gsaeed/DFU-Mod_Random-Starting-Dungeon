@@ -83,6 +83,7 @@ namespace RandomStartingDungeon
 
         // Misc Options
         public static int safeZoneSizeSetting { get; set; }
+        public static int ChanceCorpse { get; set;  }
 
         // General "Global" Variables
         public static bool alreadyRolled { get; set; }
@@ -151,6 +152,7 @@ namespace RandomStartingDungeon
 
             // Misc Options
             int safeZoneSize = settings.GetInt("MiscOptions", "safeZone");
+            ChanceCorpse = settings.GetInt("MiscOptions", "ChanceCorpse");
 
             InitMod(questDungeons, isolatedIslandDungeons, populatedIslandDungeons,
                 oceanDungs, desertDungs, hotDesertDungs, mountainDungs, rainforestDungs, swampDungs, mountainWoodsDungs, woodlandsDungs, hauntedWoodlandsDungs,
@@ -791,10 +793,10 @@ namespace RandomStartingDungeon
                                 EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
                                 if (!enemySenses.QuestBehaviour && enemyEntity.MobileEnemy.Team != MobileTeams.PlayerAlly)
                                 {
-                                    if (Dice100.SuccessRoll(25))
-                                        Destroy(entityBehaviour.gameObject);
-                                    else
+                                    if (ChanceCorpse == 100 || Dice100.SuccessRoll(ChanceCorpse))
                                         entityBehaviour.Entity.SetHealth(0);
+                                    else
+                                        Destroy(entityBehaviour.gameObject);
                                 }
                             }
                         }
