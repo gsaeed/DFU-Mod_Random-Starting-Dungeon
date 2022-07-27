@@ -795,8 +795,8 @@ namespace RandomStartingDungeon
                                 {
                                     if (ChanceCorpse == 100 || Dice100.SuccessRoll(ChanceCorpse))
                                         entityBehaviour.Entity.SetHealth(0);
-                                    else
-                                        Destroy(entityBehaviour.gameObject);
+                                    //else
+                                        //Destroy(entityBehaviour.gameObject);
                                 }
                             }
                         }

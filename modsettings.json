@@ -302,9 +302,9 @@
                 {
                     "Min": 0,
                     "Max": 100,
-                    "Value": 75,
+                    "Value": 95,
                     "Name": "ChanceCorpse",
-                    "Description": "Chance for a corpse to appear rather than clearing the enemy entirely",
+                    "Description": "Chance for a corpse to appear in the safe zone rather than a live enemy",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
                 }
