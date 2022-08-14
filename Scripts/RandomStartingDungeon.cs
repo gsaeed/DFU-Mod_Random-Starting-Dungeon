@@ -591,9 +591,40 @@ namespace RandomStartingDungeon
             alreadyRolled = false;
 
             StartGameBehaviour.OnStartGame += RandomizeSpawn_OnStartGame;
-            PlayerEnterExit.OnTransitionDungeonInterior += ClearSomeEnemies;
+            //PlayerEnterExit.OnTransitionDungeonInterior += ClearSomeEnemies;
+            GameManager.OnEnemySpawn += GameManager_OnEnemySpawn; 
             Debug.Log("Finished mod init: RandomStartingDungeon");
 		}
+
+        private static void GameManager_OnEnemySpawn(GameObject enemy)
+        {
+            var entityBehaviour = enemy.gameObject.GetComponent<DaggerfallEntityBehaviour>();
+
+            if (entityBehaviour == null)
+                return;
+
+            if (entityBehaviour.Entity.CurrentHealth < entityBehaviour.Entity.MaxHealth)
+                return;
+
+            if (entityBehaviour.EntityType == EntityTypes.EnemyMonster ||
+                entityBehaviour.EntityType == EntityTypes.EnemyClass)
+            {
+                var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - 20, 0, ChanceCorpse),
+                    Mathf.Clamp(ChanceCorpse + 20, ChanceCorpse, 100));
+
+                if (Dice100.SuccessRoll(cCorpse))
+                    entityBehaviour.Entity.SetHealth(0);
+                else
+                {
+                    float hurtAmount = UnityEngine.Random.Range(0, 100) / 100f;
+                    var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
+                    if (currentHealth <= 2)
+                        entityBehaviour.Entity.SetHealth(0);
+                    else
+                        entityBehaviour.Entity.SetHealth((int) currentHealth);
+                }
+            }
+        }
 
         #endregion
 
@@ -852,6 +883,7 @@ namespace RandomStartingDungeon
                 if (!successCheck)
                     DaggerfallUI.AddHUDText("Transformation Failed, Could Not Find Valid Dungeon Position.", 6.00f);
 
+                return;
 
                 GameObject player = GameManager.Instance.PlayerObject;
                 PlayerEntity playerEntity = player.GetComponent<DaggerfallEntityBehaviour>().Entity as PlayerEntity;
