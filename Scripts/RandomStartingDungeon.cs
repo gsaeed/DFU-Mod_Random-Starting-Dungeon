@@ -609,6 +609,18 @@ namespace RandomStartingDungeon
             if (entityBehaviour.EntityType == EntityTypes.EnemyMonster ||
                 entityBehaviour.EntityType == EntityTypes.EnemyClass)
             {
+                var entityMotor = entityBehaviour.GetComponent<EnemyMotor>();
+
+                if (entityMotor != null && !entityMotor.IsHostile)
+                    return;
+
+                EnemySenses enemySenses = entityBehaviour.GetComponent<EnemySenses>();
+                EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
+
+                if (enemySenses.QuestBehaviour || enemyEntity == null ||
+                    enemyEntity.MobileEnemy.Team == MobileTeams.PlayerAlly)
+                    return;
+                
                 var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - 20, 0, ChanceCorpse),
                     Mathf.Clamp(ChanceCorpse + 20, ChanceCorpse, 100));
 
@@ -884,6 +896,7 @@ namespace RandomStartingDungeon
                     DaggerfallUI.AddHUDText("Transformation Failed, Could Not Find Valid Dungeon Position.", 6.00f);
 
                 return;
+               
 
                 GameObject player = GameManager.Instance.PlayerObject;
                 PlayerEntity playerEntity = player.GetComponent<DaggerfallEntityBehaviour>().Entity as PlayerEntity;
