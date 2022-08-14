@@ -36,6 +36,8 @@ namespace RandomStartingDungeon
 
         static Mod mod;
 
+        private static bool notStarted = false;
+
         // Region Specific and Quest Dungeon Options
         public static bool questDungStartCheck { get; set; }
         public static bool isolatedIslandStartCheck { get; set; }
@@ -84,6 +86,8 @@ namespace RandomStartingDungeon
         // Misc Options
         public static int safeZoneSizeSetting { get; set; }
         public static int ChanceCorpse { get; set;  }
+
+        public static int FirstChanceCorpse { get; set;  }
 
         // General "Global" Variables
         public static bool alreadyRolled { get; set; }
@@ -153,6 +157,7 @@ namespace RandomStartingDungeon
             // Misc Options
             int safeZoneSize = settings.GetInt("MiscOptions", "safeZone");
             ChanceCorpse = settings.GetInt("MiscOptions", "ChanceCorpse");
+            FirstChanceCorpse = settings.GetInt("MiscOptions", "FirstChanceCorpse");
 
             InitMod(questDungeons, isolatedIslandDungeons, populatedIslandDungeons,
                 oceanDungs, desertDungs, hotDesertDungs, mountainDungs, rainforestDungs, swampDungs, mountainWoodsDungs, woodlandsDungs, hauntedWoodlandsDungs,
@@ -586,7 +591,7 @@ namespace RandomStartingDungeon
             alreadyRolled = false;
 
             StartGameBehaviour.OnStartGame += RandomizeSpawn_OnStartGame;
-
+            PlayerEnterExit.OnTransitionDungeonInterior += ClearSomeEnemies;
             Debug.Log("Finished mod init: RandomStartingDungeon");
 		}
 
@@ -594,8 +599,78 @@ namespace RandomStartingDungeon
 
         #region Methods and Functions
 
+        private static void ClearSomeEnemies(PlayerEnterExit.TransitionEventArgs args)
+        {
+            if (notStarted)
+                return;
+
+            DaggerfallEntityBehaviour[] entityBehaviours = FindObjectsOfType<DaggerfallEntityBehaviour>();
+            int count = 0;
+            int totalCount = 0;
+            for (int i = 0; i < entityBehaviours.Length; i++)
+            {
+                DaggerfallEntityBehaviour entityBehaviour = entityBehaviours[i];
+                if (entityBehaviour == null)
+                    continue;
+
+                if (entityBehaviour.EntityType == EntityTypes.EnemyMonster || entityBehaviour.EntityType == EntityTypes.EnemyClass)
+                {
+                    totalCount++;
+                    if (entityBehaviour.Entity.CurrentHealth < 2)
+                        count++;
+                }
+            }
+
+            if (count > 3)
+                return;
+
+            count = 0;
+
+            int killCount = 0, hurtCount = 0;
+
+
+            for (int i = 0; i < entityBehaviours.Length; i++)
+            {
+                DaggerfallEntityBehaviour entityBehaviour = entityBehaviours[i];
+                if (entityBehaviour == null)
+                    continue;
+
+                if (entityBehaviour.EntityType == EntityTypes.EnemyMonster || entityBehaviour.EntityType == EntityTypes.EnemyClass)
+                {
+                    var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - 20, 0, ChanceCorpse), Mathf.Clamp(ChanceCorpse + 20, ChanceCorpse, 100));
+                    if (Dice100.SuccessRoll(cCorpse))
+                    {
+                        entityBehaviour.Entity.SetHealth(0);
+                        killCount++;
+                    }
+                    else
+                    {
+                        float hurtAmount = UnityEngine.Random.Range(0, 100) / 100f;
+                        var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
+                        if (currentHealth <= 2)
+                        {
+                            entityBehaviour.Entity.SetHealth(0);
+                            killCount++;
+                        }
+                        else
+                        {
+                            entityBehaviour.Entity.SetHealth((int)currentHealth);
+                            hurtCount++;
+                        }
+                    }
+                    count++;
+                }
+            }
+            Debug.Log($"Dungeon: {GameManager.Instance.PlayerEnterExit.Dungeon.name}  Total enemies = {count}  Killed = {killCount}, hurt = {hurtCount}");
+        }
+
+
+
+
         public static void RandomizeSpawn_OnStartGame(object sender, EventArgs e)
         {
+
+
             TextFile.Token[] tokens = DaggerfallUnity.Instance.TextProvider.CreateTokens(
                         TextFile.Formatting.JustifyCenter,
                         "Do you want to be sent to a random dungeon?",
@@ -641,6 +716,7 @@ namespace RandomStartingDungeon
             sender.CloseWindow();
             if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.Yes)
             {
+                notStarted = true;
                 PickRandomDungeonTeleport();
             }
             else if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.No)
@@ -712,6 +788,8 @@ namespace RandomStartingDungeon
                 {
                     Debug.Log("No Valid Dungeon Locations To Teleport To, Try Making Your Settings Less Strict.");
                 }
+
+                notStarted = false;
             }
             else
             {
@@ -779,30 +857,42 @@ namespace RandomStartingDungeon
                 PlayerEntity playerEntity = player.GetComponent<DaggerfallEntityBehaviour>().Entity as PlayerEntity;
                 DaggerfallEntityBehaviour[] entityBehaviours = FindObjectsOfType<DaggerfallEntityBehaviour>();
 
-                if (player != null)
+                foreach (var entityBehaviour in entityBehaviours)
                 {
-                    for (int i = 0; i < entityBehaviours.Length; i++)
+                    if (entityBehaviour == null)
+                        continue;
+
+                    if (entityBehaviour.EntityType == EntityTypes.EnemyMonster || entityBehaviour.EntityType == EntityTypes.EnemyClass)
                     {
-                        DaggerfallEntityBehaviour entityBehaviour = entityBehaviours[i];
-                        if (entityBehaviour.EntityType == EntityTypes.EnemyMonster || entityBehaviour.EntityType == EntityTypes.EnemyClass)
+                        if (Vector3.Distance(entityBehaviour.transform.position, GameManager.Instance.PlayerController.transform.position) <= safeZoneSizeSetting)
                         {
-                            if (Vector3.Distance(entityBehaviour.transform.position, GameManager.Instance.PlayerController.transform.position) <= safeZoneSizeSetting)
+                            // Is it hostile or pacified?
+                            EnemySenses enemySenses = entityBehaviour.GetComponent<EnemySenses>();
+                            EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
+                            if (enemyEntity == null)
+                                continue;
+                            if (!enemySenses.QuestBehaviour && enemyEntity.MobileEnemy.Team != MobileTeams.PlayerAlly)
                             {
-                                // Is it hostile or pacified?
-                                EnemySenses enemySenses = entityBehaviour.GetComponent<EnemySenses>();
-                                EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
-                                if (!enemySenses.QuestBehaviour && enemyEntity.MobileEnemy.Team != MobileTeams.PlayerAlly)
+                                var cCorpse = UnityEngine.Random.Range(
+                                    Mathf.Clamp(FirstChanceCorpse - 20, 0, FirstChanceCorpse),
+                                    Mathf.Clamp(FirstChanceCorpse + 20, FirstChanceCorpse, 100));
+
+                                if (FirstChanceCorpse == 100 || Dice100.SuccessRoll(cCorpse))
+                                    entityBehaviour.Entity.SetHealth(0);
+                                else
                                 {
-                                    if (ChanceCorpse == 100 || Dice100.SuccessRoll(ChanceCorpse))
-                                        entityBehaviour.Entity.SetHealth(0);
-                                    //else
-                                        //Destroy(entityBehaviour.gameObject);
+                                    float hurtAmount = UnityEngine.Random.Range(0, 100) / 100f;
+                                    var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
+                                    entityBehaviour.Entity.SetHealth(currentHealth <= 2f ? 0 : (int)currentHealth);
                                 }
+
                             }
                         }
                     }
                 }
             }
+
+            notStarted = false;
         }
 
         public static bool TransformPlayerPosition()

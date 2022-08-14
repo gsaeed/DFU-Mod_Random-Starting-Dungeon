@@ -293,7 +293,7 @@
                 {
                     "Min": 0,
                     "Max": 200,
-                    "Value": 30,
+                    "Value": 200,
                     "Name": "safeZone",
                     "Description": "Default = 30 || Changes Size Of Safe Zone Cleared Of Enemies Upon Spawning. 0 = Disabled, 200 = Huge",
                     "$version": "v1",
@@ -302,9 +302,18 @@
                 {
                     "Min": 0,
                     "Max": 100,
-                    "Value": 95,
-                    "Name": "ChanceCorpse",
+                    "Value": 80,
+                    "Name": "FirstChanceCorpse",
                     "Description": "Chance for a corpse to appear in the safe zone rather than a live enemy",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
+                },
+                {
+                    "Min": 0,
+                    "Max": 100,
+                    "Value": 20,
+                    "Name": "ChanceCorpse",
+                    "Description": "Chance for a corpse to appear in the dungeon rather than a live enemy",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
                 }
