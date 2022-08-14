@@ -598,6 +598,13 @@ namespace RandomStartingDungeon
 
         private static void GameManager_OnEnemySpawn(GameObject enemy)
         {
+            if (GameManager.Instance.PlayerGPS.IsPlayerInTown())
+                return;
+
+            if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideBuilding &&
+                !GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
+                return;
+
             var staticNPC = enemy.GetComponent<StaticNPC>();
             var mobileNPC = enemy.GetComponent<MobilePersonNPC>();
 
@@ -618,20 +625,28 @@ namespace RandomStartingDungeon
                 EnemySenses enemySenses = entityBehaviour.GetComponent<EnemySenses>();
                 EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
 
-                if (enemySenses.QuestBehaviour || enemyEntity == null || 
-                    enemyEntity.MobileEnemy.Team == MobileTeams.PlayerAlly)
+                if (enemySenses.QuestBehaviour || enemyEntity == null ||
+                    enemyEntity.MobileEnemy.Team == MobileTeams.PlayerAlly ||
+                    entityBehaviour.Entity.Team == MobileTeams.PlayerAlly)
                     return;
-                
+
                 var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - 20, 0, ChanceCorpse),
                     Mathf.Clamp(ChanceCorpse + 20, ChanceCorpse, 100));
 
-                if (Dice100.SuccessRoll(cCorpse))
+                var creature = entityBehaviour.Entity.Team != MobileTeams.CityWatch &&
+                               entityBehaviour.Entity.Team != MobileTeams.KnightsAndMages &&
+                               entityBehaviour.Entity.Team != MobileTeams.PlayerEnemy &&
+                               entityBehaviour.Entity.Team != MobileTeams.Criminals;
+
+
+                if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon && Dice100.SuccessRoll(cCorpse))
                     entityBehaviour.Entity.SetHealth(0);
                 else
                 {
-                    float hurtAmount = UnityEngine.Random.Range(0, 100) / 100f;
+                    var minHurt = creature ? 0 : 10;
+                    float hurtAmount = UnityEngine.Random.Range(minHurt, 100) / 100f;
                     var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
-                    if (currentHealth <= 2)
+                    if (currentHealth <= 2 && creature)
                         entityBehaviour.Entity.SetHealth(0);
                     else
                         entityBehaviour.Entity.SetHealth((int) currentHealth);
