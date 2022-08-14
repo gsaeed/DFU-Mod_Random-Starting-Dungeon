@@ -598,6 +598,12 @@ namespace RandomStartingDungeon
 
         private static void GameManager_OnEnemySpawn(GameObject enemy)
         {
+            var staticNPC = enemy.GetComponent<StaticNPC>();
+            var mobileNPC = enemy.GetComponent<MobilePersonNPC>();
+
+            if (staticNPC != null || mobileNPC != null)
+                return;
+
             var entityBehaviour = enemy.gameObject.GetComponent<DaggerfallEntityBehaviour>();
 
             if (entityBehaviour == null)
@@ -612,7 +618,7 @@ namespace RandomStartingDungeon
                 EnemySenses enemySenses = entityBehaviour.GetComponent<EnemySenses>();
                 EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
 
-                if (enemySenses.QuestBehaviour || enemyEntity == null ||
+                if (enemySenses.QuestBehaviour || enemyEntity == null || 
                     enemyEntity.MobileEnemy.Team == MobileTeams.PlayerAlly)
                     return;
                 
