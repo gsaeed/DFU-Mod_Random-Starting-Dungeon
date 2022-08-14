@@ -609,11 +609,6 @@ namespace RandomStartingDungeon
             if (entityBehaviour.EntityType == EntityTypes.EnemyMonster ||
                 entityBehaviour.EntityType == EntityTypes.EnemyClass)
             {
-                var entityMotor = entityBehaviour.GetComponent<EnemyMotor>();
-
-                if (entityMotor != null && !entityMotor.IsHostile)
-                    return;
-
                 EnemySenses enemySenses = entityBehaviour.GetComponent<EnemySenses>();
                 EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
 
