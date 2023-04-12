@@ -21,6 +21,7 @@ using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
 using DaggerfallWorkshop.Utility;
 using System;
 using System.Collections.Generic;
+using DaggerfallWorkshop.Game.Questing;
 using UnityEngine;
 
 namespace RandomStartingDungeon
@@ -598,12 +599,12 @@ namespace RandomStartingDungeon
 
         private static void GameManager_OnEnemySpawn(GameObject enemy)
         {
-            if (GameManager.Instance.PlayerGPS.IsPlayerInTown())
-                return;
+           // if (GameManager.Instance.PlayerGPS.IsPlayerInTown())
+              //  return;
 
-            if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideBuilding &&
-                !GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
-                return;
+            //if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideBuilding &&
+               // !GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
+               // return;
 
             var staticNPC = enemy.GetComponent<StaticNPC>();
             var mobileNPC = enemy.GetComponent<MobilePersonNPC>();
@@ -614,6 +615,10 @@ namespace RandomStartingDungeon
             var entityBehaviour = enemy.gameObject.GetComponent<DaggerfallEntityBehaviour>();
 
             if (entityBehaviour == null)
+                return;
+
+            var questResourceBehaviour = enemy.gameObject.GetComponent<QuestResourceBehaviour>();
+            if(questResourceBehaviour != null)
                 return;
 
             if (entityBehaviour.Entity.CurrentHealth < entityBehaviour.Entity.MaxHealth)
