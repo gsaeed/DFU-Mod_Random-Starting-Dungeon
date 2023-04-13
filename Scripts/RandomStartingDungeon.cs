@@ -772,6 +772,8 @@ namespace RandomStartingDungeon
                 Debug.LogFormat("Time Increase By {0} Days!", time);
                 time = time * 86400; // time = number of days, 86400 = seconds in a day.
                 DaggerfallUnity.Instance.WorldTime.DaggerfallDateTime.RaiseTime(time);
+                ModManager.Instance.SendModMessage("Climates & Calories", "NewTime", false);
+
             }
         }
 
