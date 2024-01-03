@@ -913,6 +913,11 @@ namespace RandomStartingDungeon
         {
             if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon && alreadyRolled) // This will defintiely have to be changed, for logic with more discrimination on when it runs.
             {
+                while (!GameManager.Instance.StreamingWorld.IsReady)
+                {
+
+                }
+
                 bool successCheck = TransformPlayerPosition();
 
                 if (!successCheck)

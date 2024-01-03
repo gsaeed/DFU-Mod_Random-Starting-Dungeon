@@ -8,6 +8,7 @@
 // Special Thanks:  Jehuty, TheLacus, Hazelnut
 // Modifier:
 
+using DaggerfallWorkshop.Game;
 using System;
 using UnityEngine;
 using Wenzil.Console;
