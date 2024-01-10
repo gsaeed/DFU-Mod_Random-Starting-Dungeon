@@ -642,19 +642,28 @@ namespace RandomStartingDungeon
                                entityBehaviour.Entity.Team != MobileTeams.KnightsAndMages &&
                                entityBehaviour.Entity.Team != MobileTeams.PlayerEnemy &&
                                entityBehaviour.Entity.Team != MobileTeams.Criminals;
-
-
-                if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon && Dice100.SuccessRoll(cCorpse))
-                    entityBehaviour.Entity.SetHealth(0);
-                else
+                //Quest Foe
+                if (enemy.name.Contains("Quest Foe"))
                 {
                     var minHurt = creature ? 0 : 10;
-                    float hurtAmount = UnityEngine.Random.Range(minHurt, 100) / 100f;
-                    var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
-                    if (currentHealth <= 2 && creature)
+                    float hurtAmount = UnityEngine.Random.Range(minHurt, 75) / 100f;
+                    var currentHealth = UnityEngine.Mathf.Max(entityBehaviour.Entity.CurrentHealth * hurtAmount, 5);
+                    entityBehaviour.Entity.SetHealth((int)currentHealth);
+                }
+                else
+                {
+                    if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon && Dice100.SuccessRoll(cCorpse))
                         entityBehaviour.Entity.SetHealth(0);
                     else
-                        entityBehaviour.Entity.SetHealth((int) currentHealth);
+                    {
+                        var minHurt = creature ? 0 : 10;
+                        float hurtAmount = UnityEngine.Random.Range(minHurt, 100) / 100f;
+                        var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
+                        if (currentHealth <= 2 && creature)
+                            entityBehaviour.Entity.SetHealth(0);
+                        else
+                            entityBehaviour.Entity.SetHealth((int)currentHealth);
+                    }
                 }
             }
         }
