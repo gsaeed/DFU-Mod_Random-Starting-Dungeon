@@ -638,10 +638,10 @@ namespace RandomStartingDungeon
                 var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - 20, 0, ChanceCorpse),
                     Mathf.Clamp(ChanceCorpse + 20, ChanceCorpse, 100));
 
-                var creature = entityBehaviour.Entity.Team != MobileTeams.CityWatch &&
-                               entityBehaviour.Entity.Team != MobileTeams.KnightsAndMages &&
-                               entityBehaviour.Entity.Team != MobileTeams.PlayerEnemy &&
-                               entityBehaviour.Entity.Team != MobileTeams.Criminals;
+                var creature = entityBehaviour.Entity.Team != MobileTeams.CityWatch;
+                  //             && entityBehaviour.Entity.Team != MobileTeams.KnightsAndMages &&
+                  //             entityBehaviour.Entity.Team != MobileTeams.PlayerEnemy &&
+                  //             entityBehaviour.Entity.Team != MobileTeams.Criminals;
                 //Quest Foe
                 if (enemy.name.Contains("Quest Foe"))
                 {
