@@ -43,6 +43,8 @@ namespace RandomStartingDungeon
         public static bool questDungStartCheck { get; set; }
         public static bool isolatedIslandStartCheck { get; set; }
         public static bool populatedIslandStartCheck { get; set; }
+        public static bool LimitToDaggerfall { get; set; }
+        public static bool LimitToOutskirtsOfDaggerfall { get; set; }
 
         // Dungeon Location Climate Options
         public static bool oceanStartCheck { get; set; }
@@ -114,6 +116,10 @@ namespace RandomStartingDungeon
             bool questDungeons = settings.GetBool("Quest&IslandOptions", "questDungeons");
             bool isolatedIslandDungeons = settings.GetBool("Quest&IslandOptions", "isolatedIslandDungeons");
             bool populatedIslandDungeons = settings.GetBool("Quest&IslandOptions", "populatedIslandDungeons");
+            LimitToDaggerfall = settings.GetBool("Quest&IslandOptions", "LimitToDaggerfall");
+            LimitToOutskirtsOfDaggerfall = settings.GetBool("Quest&IslandOptions", "LimitToOutskirtsOfDaggerfall");
+            if (LimitToOutskirtsOfDaggerfall)
+                LimitToDaggerfall = false;
 
             // Dungeon Location Climate Options
             bool oceanDungs = settings.GetBool("ClimateOptions", "ocean");
@@ -810,11 +816,14 @@ namespace RandomStartingDungeon
 
             if (!alreadyRolled)
             {
+                List<int> outskirtsOfDaggerfall = new List<int>() { 17, 21, 32, 40, 41, 42, 58, 59, 60 };
                 for (int n = 0; n < 62; n++)
                 {
                     regionInfo = DaggerfallUnity.Instance.ContentReader.MapFileReader.GetRegion(n);
                     Debug.Log($"** Random Dungeon - {n} = {regionInfo.Name} **");
-                    if (!(n == 17 || n == 21 || n == 42 || n == 58 || n == 59))
+                    if (LimitToDaggerfall && n != 17)
+                        continue;
+                    if (LimitToOutskirtsOfDaggerfall && !outskirtsOfDaggerfall.Contains(n))
                         continue;
                     if (regionInfo.LocationCount <= 0) // Add the if-statements to keep "invalid" regions from being put into grab-bag, also use this for some settings.
                         continue;

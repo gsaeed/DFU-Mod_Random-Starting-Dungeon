@@ -26,6 +26,20 @@
                     "Description": "Allows Dungeons To Be Spawned In Located On Inhabited Islands || Default = True",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": false,
+                    "Name": "LimitToDaggerfall",
+                    "Description": null,
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
+                },
+                {
+                    "Value": false,
+                    "Name": "LimitToOutskirtsOfDaggerfall",
+                    "Description": "If enabled, will override setting of LimitToDaggerfall",
+                    "$version": "v1",
+                    "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.ToggleKey"
                 }
             ],
             "$version": "v1"
