@@ -643,6 +643,9 @@ namespace RandomStartingDungeon
 
                 var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - 20, 0, ChanceCorpse),
                     Mathf.Clamp(ChanceCorpse + 20, ChanceCorpse, 100));
+                SetupDemoEnemy demoEnemy = enemy.GetComponent<SetupDemoEnemy>();
+                if (demoEnemy != null && demoEnemy.Alerted)
+                    cCorpse = 0;
 
                 var creature = entityBehaviour.Entity.Team != MobileTeams.CityWatch;
                   //             && entityBehaviour.Entity.Team != MobileTeams.KnightsAndMages &&
