@@ -21,6 +21,8 @@ using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
 using DaggerfallWorkshop.Utility;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using automaping;
 using DaggerfallWorkshop.Game.Questing;
 using UnityEngine;
 
@@ -91,6 +93,10 @@ namespace RandomStartingDungeon
         public static int ChanceCorpse { get; set;  }
 
         public static int FirstChanceCorpse { get; set;  }
+        public static int MinimumDamage { get; private set; }
+        public static int MaximumDamage { get; private set; }
+
+        public static int ChanceCorpseRandomRange { get; private set; }
 
         // General "Global" Variables
         public static bool alreadyRolled { get; set; }
@@ -165,6 +171,18 @@ namespace RandomStartingDungeon
             int safeZoneSize = settings.GetInt("MiscOptions", "safeZone");
             ChanceCorpse = settings.GetInt("MiscOptions", "ChanceCorpse");
             FirstChanceCorpse = settings.GetInt("MiscOptions", "FirstChanceCorpse");
+            MinimumDamage = settings.GetInt("MiscOptions", "MinimumDamage");
+            MaximumDamage = settings.GetInt("MiscOptions", "MaximumDamage");
+            ChanceCorpseRandomRange = settings.GetInt("MiscOptions", "ChanceCorpseRandomRange");
+
+            if (MaximumDamage < MinimumDamage)
+                MaximumDamage = MinimumDamage + 1;
+
+            if (FirstChanceCorpse < ChanceCorpse)
+                FirstChanceCorpse = ChanceCorpse;
+
+            if (ChanceCorpseRandomRange > ChanceCorpse)
+                ChanceCorpseRandomRange = ChanceCorpse;
 
             InitMod(questDungeons, isolatedIslandDungeons, populatedIslandDungeons,
                 oceanDungs, desertDungs, hotDesertDungs, mountainDungs, rainforestDungs, swampDungs, mountainWoodsDungs, woodlandsDungs, hauntedWoodlandsDungs,
@@ -598,7 +616,7 @@ namespace RandomStartingDungeon
             alreadyRolled = false;
 
             StartGameBehaviour.OnStartGame += RandomizeSpawn_OnStartGame;
-            //PlayerEnterExit.OnTransitionDungeonInterior += ClearSomeEnemies;
+            PlayerEnterExit.OnTransitionDungeonInterior += ClearSomeEnemies;
             GameManager.OnEnemySpawn += GameManager_OnEnemySpawn; 
             Debug.Log("Finished mod init: RandomStartingDungeon");
 		}
@@ -627,8 +645,8 @@ namespace RandomStartingDungeon
             if(questResourceBehaviour != null)
                 return;
 
-            if (entityBehaviour.Entity.CurrentHealth < entityBehaviour.Entity.MaxHealth)
-                return;
+ //           if (entityBehaviour.Entity.CurrentHealth < entityBehaviour.Entity.MaxHealth)
+ //               return;
 
             if (entityBehaviour.EntityType == EntityTypes.EnemyMonster ||
                 entityBehaviour.EntityType == EntityTypes.EnemyClass)
@@ -641,8 +659,8 @@ namespace RandomStartingDungeon
                     entityBehaviour.Entity.Team == MobileTeams.PlayerAlly)
                     return;
 
-                var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - 20, 0, ChanceCorpse),
-                    Mathf.Clamp(ChanceCorpse + 20, ChanceCorpse, 100));
+                var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - ChanceCorpseRandomRange, 0, ChanceCorpse),
+                    Mathf.Clamp(ChanceCorpse + ChanceCorpseRandomRange, ChanceCorpse, 100));
                 SetupDemoEnemy demoEnemy = enemy.GetComponent<SetupDemoEnemy>();
                 if (demoEnemy != null && demoEnemy.Alerted)
                     cCorpse = 0;
@@ -654,8 +672,7 @@ namespace RandomStartingDungeon
                 //Quest Foe
                 if (enemy.name.Contains("Quest Foe"))
                 {
-                    var minHurt = creature ? 0 : 10;
-                    float hurtAmount = UnityEngine.Random.Range(minHurt, 75) / 100f;
+                    float hurtAmount = UnityEngine.Random.Range(MinimumDamage, Mathf.Clamp(MaximumDamage, MinimumDamage, 75)) / 100f;
                     var currentHealth = UnityEngine.Mathf.Max(entityBehaviour.Entity.CurrentHealth * hurtAmount, 5);
                     entityBehaviour.Entity.SetHealth((int)currentHealth);
                 }
@@ -665,10 +682,9 @@ namespace RandomStartingDungeon
                         entityBehaviour.Entity.SetHealth(0);
                     else
                     {
-                        var minHurt = creature ? 0 : 10;
-                        float hurtAmount = UnityEngine.Random.Range(minHurt, 100) / 100f;
+                        float hurtAmount = UnityEngine.Random.Range(MinimumDamage, MaximumDamage) / 100f;
                         var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
-                        if (currentHealth <= 2 && creature)
+                        if (currentHealth <= 2 )
                             entityBehaviour.Entity.SetHealth(0);
                         else
                             entityBehaviour.Entity.SetHealth((int)currentHealth);
@@ -686,6 +702,22 @@ namespace RandomStartingDungeon
             if (notStarted)
                 return;
 
+            GameObject dungeon;
+            if (GameManager.Instance.IsPlayerInsideDungeon)
+            {
+                dungeon = GameObject.Find("Dungeon");
+
+                if (dungeon != null)
+                {
+                    bool anyStaticNPCs = dungeon.GetComponentsInChildren<StaticNPC>(true).Any();
+                    if (anyStaticNPCs)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            
             DaggerfallEntityBehaviour[] entityBehaviours = FindObjectsOfType<DaggerfallEntityBehaviour>();
             int count = 0;
             int totalCount = 0;
@@ -719,7 +751,7 @@ namespace RandomStartingDungeon
 
                 if (entityBehaviour.EntityType == EntityTypes.EnemyMonster || entityBehaviour.EntityType == EntityTypes.EnemyClass)
                 {
-                    var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - 20, 0, ChanceCorpse), Mathf.Clamp(ChanceCorpse + 20, ChanceCorpse, 100));
+                    var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - ChanceCorpseRandomRange, 0, ChanceCorpse), Mathf.Clamp(ChanceCorpse + ChanceCorpseRandomRange, ChanceCorpse + 1, 100));
                     if (Dice100.SuccessRoll(cCorpse))
                     {
                         entityBehaviour.Entity.SetHealth(0);
@@ -727,7 +759,7 @@ namespace RandomStartingDungeon
                     }
                     else
                     {
-                        float hurtAmount = UnityEngine.Random.Range(0, 100) / 100f;
+                        float hurtAmount = UnityEngine.Random.Range(MinimumDamage, MaximumDamage) / 100f;
                         var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
                         if (currentHealth <= 2)
                         {
@@ -944,7 +976,7 @@ namespace RandomStartingDungeon
                 if (!successCheck)
                     DaggerfallUI.AddHUDText("Transformation Failed, Could Not Find Valid Dungeon Position.", 6.00f);
 
-                return;
+               
                
 
                 GameObject player = GameManager.Instance.PlayerObject;
@@ -968,14 +1000,14 @@ namespace RandomStartingDungeon
                             if (!enemySenses.QuestBehaviour && enemyEntity.MobileEnemy.Team != MobileTeams.PlayerAlly)
                             {
                                 var cCorpse = UnityEngine.Random.Range(
-                                    Mathf.Clamp(FirstChanceCorpse - 20, 0, FirstChanceCorpse),
-                                    Mathf.Clamp(FirstChanceCorpse + 20, FirstChanceCorpse, 100));
+                                    Mathf.Clamp(FirstChanceCorpse - ChanceCorpseRandomRange, 0, FirstChanceCorpse),
+                                    Mathf.Clamp(FirstChanceCorpse + ChanceCorpseRandomRange, FirstChanceCorpse + 1, 100));
 
                                 if (FirstChanceCorpse == 100 || Dice100.SuccessRoll(cCorpse))
                                     entityBehaviour.Entity.SetHealth(0);
                                 else
                                 {
-                                    float hurtAmount = UnityEngine.Random.Range(0, 100) / 100f;
+                                    float hurtAmount = UnityEngine.Random.Range(MinimumDamage, MaximumDamage) / 100f;
                                     var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
                                     entityBehaviour.Entity.SetHealth(currentHealth <= 2f ? 0 : (int)currentHealth);
                                 }
