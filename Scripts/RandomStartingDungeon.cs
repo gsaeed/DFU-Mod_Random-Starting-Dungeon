@@ -22,7 +22,7 @@ using DaggerfallWorkshop.Utility;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using automaping;
+
 using DaggerfallWorkshop.Game.Questing;
 using UnityEngine;
 
@@ -623,12 +623,8 @@ namespace RandomStartingDungeon
 
         private static void GameManager_OnEnemySpawn(GameObject enemy)
         {
-           // if (GameManager.Instance.PlayerGPS.IsPlayerInTown())
-              //  return;
-
-            //if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideBuilding &&
-               // !GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon)
-               // return;
+            if (DoStaticNPCsExistInThisDungeon())
+               return;
 
             var staticNPC = enemy.GetComponent<StaticNPC>();
             var mobileNPC = enemy.GetComponent<MobilePersonNPC>();
@@ -697,7 +693,7 @@ namespace RandomStartingDungeon
 
         #region Methods and Functions
 
-        private static void ClearSomeEnemies(PlayerEnterExit.TransitionEventArgs args)
+        private static void ClearSomeEnemiesOriginal(PlayerEnterExit.TransitionEventArgs args)
         {
             if (notStarted)
                 return;
@@ -745,7 +741,9 @@ namespace RandomStartingDungeon
 
             for (int i = 0; i < entityBehaviours.Length; i++)
             {
+                
                 DaggerfallEntityBehaviour entityBehaviour = entityBehaviours[i];
+                
                 if (entityBehaviour == null)
                     continue;
 
@@ -778,8 +776,77 @@ namespace RandomStartingDungeon
             Debug.Log($"Dungeon: {GameManager.Instance.PlayerEnterExit.Dungeon.name}  Total enemies = {count}  Killed = {killCount}, hurt = {hurtCount}");
         }
 
+        private static bool DoStaticNPCsExistInThisDungeon()
+        {
+            GameObject dungeon;
+            if (GameManager.Instance.IsPlayerInsideDungeon)
+            {
+                dungeon = GameObject.Find("Dungeon");
+
+                if (dungeon != null)
+                {
+                    bool anyStaticNPCs = dungeon.GetComponentsInChildren<StaticNPC>(true).Any();
+                    if (anyStaticNPCs)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+
+        private static void ClearSomeEnemies(PlayerEnterExit.TransitionEventArgs args)
+        {
+            if (notStarted)
+                return;
+
+            if (DoStaticNPCsExistInThisDungeon())
+                return;
 
 
+            DaggerfallEntityBehaviour[] entityBehaviours = FindObjectsOfType<DaggerfallEntityBehaviour>();
+            int count = 0;
+            int totalCount = 0;
+            for (int i = 0; i < entityBehaviours.Length; i++)
+            {
+                DaggerfallEntityBehaviour entityBehaviour = entityBehaviours[i];
+                if (entityBehaviour == null)
+                    continue;
+
+                if (entityBehaviour.EntityType == EntityTypes.EnemyMonster ||
+                    entityBehaviour.EntityType == EntityTypes.EnemyClass)
+                {
+                    totalCount++;
+                    if (entityBehaviour.Entity.CurrentHealth < 2)
+                        count++;
+                }
+            }
+
+            if (count > 3)
+                return;
+
+            count = 0;
+
+            int killCount = 0, hurtCount = 0;
+
+
+            for (int i = 0; i < entityBehaviours.Length; i++)
+            {
+
+                DaggerfallEntityBehaviour entityBehaviour = entityBehaviours[i];
+                if(entityBehaviour.EntityType == EntityTypes.EnemyMonster ||
+                    entityBehaviour.EntityType == EntityTypes.EnemyClass)
+                {
+                    GameManager_OnEnemySpawn(entityBehaviour.gameObject);
+                }
+
+
+            }
+
+
+
+        }
 
         public static void RandomizeSpawn_OnStartGame(object sender, EventArgs e)
         {
