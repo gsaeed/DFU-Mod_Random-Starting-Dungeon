@@ -655,8 +655,10 @@ namespace RandomStartingDungeon
                     entityBehaviour.Entity.Team == MobileTeams.PlayerAlly)
                     return;
 
-                var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(ChanceCorpse - ChanceCorpseRandomRange, 0, ChanceCorpse),
-                    Mathf.Clamp(ChanceCorpse + ChanceCorpseRandomRange, ChanceCorpse, 100));
+                var chanceCorpse = notStarted ? FirstChanceCorpse : ChanceCorpse;
+
+                var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(chanceCorpse - ChanceCorpseRandomRange, 0, chanceCorpse),
+                    Mathf.Clamp(chanceCorpse + ChanceCorpseRandomRange, chanceCorpse, 100));
                 SetupDemoEnemy demoEnemy = enemy.GetComponent<SetupDemoEnemy>();
                 if (demoEnemy != null && demoEnemy.Alerted)
                     cCorpse = 0;
@@ -1029,6 +1031,20 @@ namespace RandomStartingDungeon
             // Also for that "Live Another Life" version, likely add towns/homes/cities, etc to the list of places that can be randomly teleported and brought to and such.
         }
 
+        private static bool IsMainQuestDungeon(GameObject dungeonParent)
+        {
+
+            var blocks = dungeonParent.GetComponentsInChildren<DaggerfallRDBBlock>();
+
+            foreach (var block in blocks)
+            {
+                if (block.name.Contains("S"))
+                    return true;
+            }
+
+            return false;
+        }
+
         public static void TeleToSpawnPoint_OnRespawnerComplete()
         {
             if (GameManager.Instance.PlayerEnterExit.IsPlayerInsideDungeon && alreadyRolled) // This will defintiely have to be changed, for logic with more discrimination on when it runs.
@@ -1036,6 +1052,20 @@ namespace RandomStartingDungeon
                 while (!GameManager.Instance.StreamingWorld.IsReady)
                 {
 
+                }
+
+                /* is this a main quest dungeon? */
+                if (IsMainQuestDungeon(GameManager.Instance.DungeonParent))
+                    PickRandomDungeonTeleport();
+
+                /* is there a quest marker in the dungeon? */
+                QuestMarker spawnMarker;
+                Vector3 buildingOrigin;
+
+                bool result = QuestMachine.Instance.GetCurrentLocationQuestMarker(out spawnMarker, out buildingOrigin);
+                if (result)
+                {
+                    PickRandomDungeonTeleport();
                 }
 
                 bool successCheck = TransformPlayerPosition();

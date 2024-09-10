@@ -336,7 +336,7 @@
                     "Max": 50,
                     "Value": 20,
                     "Name": "ChanceCorpseRandomRange",
-                    "Description": null,
+                    "Description": "Range = ChanceCorpse += ChanceCorpseRandomRange",
                     "$version": "v1",
                     "$type": "DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings.SliderIntKey"
                 },
