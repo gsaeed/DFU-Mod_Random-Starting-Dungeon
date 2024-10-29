@@ -80,6 +80,7 @@ namespace RandomStartingDungeon
         public static bool humanStrongholdStartCheck { get; set; }
         public static bool orcStrongholdStartCheck { get; set; }
         public static bool cryptStartCheck { get; set; }
+        public static bool RandomizeMaxHealth { get; set; } = true;
 
         // Start Date Options
         public static bool randomStartDateCheck { get; set; }
@@ -183,7 +184,7 @@ namespace RandomStartingDungeon
 
             if (ChanceCorpseRandomRange > ChanceCorpse)
                 ChanceCorpseRandomRange = ChanceCorpse;
-
+            RandomizeMaxHealth = settings.GetBool("MiscOptions", "RandomizeMaxHealth");
             InitMod(questDungeons, isolatedIslandDungeons, populatedIslandDungeons,
                 oceanDungs, desertDungs, hotDesertDungs, mountainDungs, rainforestDungs, swampDungs, mountainWoodsDungs, woodlandsDungs, hauntedWoodlandsDungs,
                 cemeteryDungs, scorpionNestDungs, volcanicCavesDungs, barbarianStrongholdDungs, dragonsDenDungs, giantStrongholdDungs, spiderNestDungs,
@@ -192,8 +193,9 @@ namespace RandomStartingDungeon
 
                 mod.IsReady = true;
         }
-		
-		private void Start()
+
+
+        private void Start()
         {
             RandomStartingDungeonConsoleCommands.RegisterCommands();
         }
@@ -636,11 +638,15 @@ namespace RandomStartingDungeon
 
             if (entityBehaviour == null)
                 return;
+            var isQuestResource = false;
 
             var questResourceBehaviour = enemy.gameObject.GetComponent<QuestResourceBehaviour>();
-            if(questResourceBehaviour != null)
-                return;
-
+            if (questResourceBehaviour != null)
+            {
+                if (!enemy is DaggerfallEnemy)
+                    return;
+                isQuestResource = true;
+            }
  //           if (entityBehaviour.Entity.CurrentHealth < entityBehaviour.Entity.MaxHealth)
  //               return;
 
@@ -655,6 +661,17 @@ namespace RandomStartingDungeon
                     entityBehaviour.Entity.Team == MobileTeams.PlayerAlly)
                     return;
 
+                if (RandomizeMaxHealth)
+                {
+                    var maxHealth = UnityEngine.Random.Range(entityBehaviour.Entity.MaxHealth * 3 / 4, entityBehaviour.Entity.MaxHealth * 5 / 4);
+                    entityBehaviour.Entity.MaxHealth = maxHealth;
+                    entityBehaviour.Entity.SetHealth(
+                        Mathf.RoundToInt(maxHealth * entityBehaviour.Entity.CurrentHealthPercent));
+                }
+
+
+                //var chanceCorpse = UnityEngine.Random.Range(ChanceCorpse - ChanceCorpseRandomRange, ChanceCorpse + ChanceCorpseRandomRange)
+
                 var chanceCorpse = notStarted ? FirstChanceCorpse : ChanceCorpse;
 
                 var cCorpse = UnityEngine.Random.Range(Mathf.Clamp(chanceCorpse - ChanceCorpseRandomRange, 0, chanceCorpse),
@@ -668,7 +685,7 @@ namespace RandomStartingDungeon
                   //             entityBehaviour.Entity.Team != MobileTeams.PlayerEnemy &&
                   //             entityBehaviour.Entity.Team != MobileTeams.Criminals;
                 //Quest Foe
-                if (enemy.name.Contains("Quest Foe"))
+                if (enemy.name.Contains("Quest Foe") || isQuestResource)
                 {
                     float hurtAmount = UnityEngine.Random.Range(MinimumDamage, Mathf.Clamp(MaximumDamage, MinimumDamage, 75)) / 100f;
                     var currentHealth = UnityEngine.Mathf.Max(entityBehaviour.Entity.CurrentHealth * hurtAmount, 5);
