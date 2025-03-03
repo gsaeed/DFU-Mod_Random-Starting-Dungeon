@@ -923,7 +923,8 @@ namespace RandomStartingDungeon
             }
             else if (messageBoxButton == DaggerfallMessageBox.MessageBoxButtons.No)
             {
-                return;
+                ReduceEnemyHealth();
+                
             }
         }
 
@@ -1070,7 +1071,6 @@ namespace RandomStartingDungeon
                 {
 
                 }
-
                 /* is this a main quest dungeon? */
                 if (IsMainQuestDungeon(GameManager.Instance.DungeonParent))
                     PickRandomDungeonTeleport();
@@ -1079,7 +1079,8 @@ namespace RandomStartingDungeon
                 QuestMarker spawnMarker;
                 Vector3 buildingOrigin;
 
-                bool result = QuestMachine.Instance.GetCurrentLocationQuestMarker(out spawnMarker, out buildingOrigin);
+                bool result =
+                    QuestMachine.Instance.GetCurrentLocationQuestMarker(out spawnMarker, out buildingOrigin);
                 if (result)
                 {
                     PickRandomDungeonTeleport();
@@ -1090,51 +1091,53 @@ namespace RandomStartingDungeon
                 if (!successCheck)
                     DaggerfallUI.AddHUDText("Transformation Failed, Could Not Find Valid Dungeon Position.", 6.00f);
 
-               
-               
+                ReduceEnemyHealth();
 
-                GameObject player = GameManager.Instance.PlayerObject;
-                PlayerEntity playerEntity = player.GetComponent<DaggerfallEntityBehaviour>().Entity as PlayerEntity;
-                DaggerfallEntityBehaviour[] entityBehaviours = FindObjectsOfType<DaggerfallEntityBehaviour>();
-
-                foreach (var entityBehaviour in entityBehaviours)
-                {
-                    if (entityBehaviour == null)
-                        continue;
-
-                    if (entityBehaviour.EntityType == EntityTypes.EnemyMonster || entityBehaviour.EntityType == EntityTypes.EnemyClass)
-                    {
-                        if (Vector3.Distance(entityBehaviour.transform.position, GameManager.Instance.PlayerController.transform.position) <= safeZoneSizeSetting)
-                        {
-                            // Is it hostile or pacified?
-                            EnemySenses enemySenses = entityBehaviour.GetComponent<EnemySenses>();
-                            EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
-                            if (enemyEntity == null)
-                                continue;
-                            if (!enemySenses.QuestBehaviour && enemyEntity.MobileEnemy.Team != MobileTeams.PlayerAlly)
-                            {
-                                var cCorpse = UnityEngine.Random.Range(
-                                    Mathf.Clamp(FirstChanceCorpse - ChanceCorpseRandomRange, 0, FirstChanceCorpse),
-                                    Mathf.Clamp(FirstChanceCorpse + ChanceCorpseRandomRange, FirstChanceCorpse + 1, 100));
-
-                                if (FirstChanceCorpse == 100 || Dice100.SuccessRoll(cCorpse))
-                                    entityBehaviour.Entity.SetHealth(0);
-                                else
-                                {
-                                    float hurtAmount = UnityEngine.Random.Range(MinimumDamage, MaximumDamage) / 100f;
-                                    var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
-                                    entityBehaviour.Entity.SetHealth(currentHealth <= 2f ? 0 : (int)currentHealth);
-                                }
-
-                            }
-                        }
-                    }
-                }
             }
 
             notStarted = false;
         }
 
+        static void ReduceEnemyHealth()
+        {
+            GameObject player = GameManager.Instance.PlayerObject;
+            PlayerEntity playerEntity = player.GetComponent<DaggerfallEntityBehaviour>().Entity as PlayerEntity;
+            DaggerfallEntityBehaviour[] entityBehaviours = FindObjectsOfType<DaggerfallEntityBehaviour>();
+
+            foreach (var entityBehaviour in entityBehaviours)
+            {
+                if (entityBehaviour == null)
+                    continue;
+
+                if (entityBehaviour.EntityType == EntityTypes.EnemyMonster || entityBehaviour.EntityType == EntityTypes.EnemyClass)
+                {
+                    if (Vector3.Distance(entityBehaviour.transform.position, GameManager.Instance.PlayerController.transform.position) <= safeZoneSizeSetting)
+                    {
+                        // Is it hostile or pacified?
+                        EnemySenses enemySenses = entityBehaviour.GetComponent<EnemySenses>();
+                        EnemyEntity enemyEntity = entityBehaviour.Entity as EnemyEntity;
+                        if (enemyEntity == null)
+                            continue;
+                        if (!enemySenses.QuestBehaviour && enemyEntity.MobileEnemy.Team != MobileTeams.PlayerAlly)
+                        {
+                            var cCorpse = UnityEngine.Random.Range(
+                                Mathf.Clamp(FirstChanceCorpse - ChanceCorpseRandomRange, 0, FirstChanceCorpse),
+                                Mathf.Clamp(FirstChanceCorpse + ChanceCorpseRandomRange, FirstChanceCorpse + 1, 100));
+
+                            if (FirstChanceCorpse == 100 || Dice100.SuccessRoll(cCorpse))
+                                entityBehaviour.Entity.SetHealth(0);
+                            else
+                            {
+                                float hurtAmount = UnityEngine.Random.Range(MinimumDamage, MaximumDamage) / 100f;
+                                var currentHealth = entityBehaviour.Entity.CurrentHealth * hurtAmount;
+                                entityBehaviour.Entity.SetHealth(currentHealth <= 2f ? 0 : (int)currentHealth);
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
         public static bool TransformPlayerPosition()
         {
             DFLocation dungLocation = dungLocationGlobal;
