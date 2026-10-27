@@ -20,6 +20,7 @@ using DaggerfallWorkshop.Game.Utility.ModSupport;
 using DaggerfallWorkshop.Game.Utility.ModSupport.ModSettings;
 using DaggerfallWorkshop.Utility;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -867,16 +868,46 @@ namespace RandomStartingDungeon
 
         }
 
-        public static void RandomizeSpawn_OnStartGame(object sender, EventArgs e)
+        public static bool RandomlyGeneratedLocationsAreReady()
         {
+            bool worldReady = false;
 
+            Mod LIABMod = ModManager.Instance.GetMod("Living Iliac Bay");
+            if (LIABMod == null)
+                return true;
 
+            ModManager.Instance.SendModMessage("Living Iliac Bay", "IsWorldReady", null,
+                (string message, object data) =>
+                {
+                    if (data != null && data is bool)
+                    {
+                        worldReady = (bool)data;
+                    }
+                });
+
+            return worldReady;
+
+        }
+
+        static IEnumerator ShowRandomStartPromptWhenReady()
+        {
+            Mod liab = ModManager.Instance.GetMod("Living Iliac Bay");
+            if (liab != null && liab.Enabled)
+            {
+                while (!RandomlyGeneratedLocationsAreReady())
+                    yield return new WaitForSecondsRealtime(1f);
+            }
+            ShowRandomStartPrompt();
+        }
+
+        static void ShowRandomStartPrompt()
+        {
             TextFile.Token[] tokens = DaggerfallUnity.Instance.TextProvider.CreateTokens(
-                        TextFile.Formatting.JustifyCenter,
-                        "Do you want to be sent to a random dungeon?",
-                        "",
-                        "(If Yes, expect 1-2 minutes of unresponsiveness",
-                        "while initial location filtering is processed.)");
+                TextFile.Formatting.JustifyCenter,
+                "Do you want to be sent to a random dungeon?",
+                "",
+                "(If Yes, expect 1-2 minutes of unresponsiveness",
+                "while initial location filtering is processed.)");
             DaggerfallMessageBox randomStartConfirmBox = new DaggerfallMessageBox(DaggerfallUI.UIManager);
 
             randomStartConfirmBox.SetTextTokens(tokens);
@@ -884,6 +915,11 @@ namespace RandomStartingDungeon
             randomStartConfirmBox.AddButton(DaggerfallMessageBox.MessageBoxButtons.No);
             randomStartConfirmBox.OnButtonClick += ConfirmRandomStart_OnButtonClick;
             DaggerfallUI.UIManager.PushWindow(randomStartConfirmBox);
+        }
+
+        public static void RandomizeSpawn_OnStartGame(object sender, EventArgs e)
+        {
+            GameManager.Instance.StartCoroutine(ShowRandomStartPromptWhenReady());
 
             if (randomStartDateCheck) // If option is enabled at all.
             {
@@ -975,7 +1011,8 @@ namespace RandomStartingDungeon
 
                     // Select a random dungeon location index from available list then get its location data
                     int RandDungIndex = UnityEngine.Random.Range(0, foundIndices.Length);
-                    DFLocation dungLocation = DaggerfallUnity.Instance.ContentReader.MapFileReader.GetLocation(randomRegionIndex, foundIndices[RandDungIndex]);
+                    DFRegion pickedRegion = DaggerfallUnity.Instance.ContentReader.MapFileReader.GetRegion(randomRegionIndex);
+                    DFLocation dungLocation = GetLocationSafe(pickedRegion, randomRegionIndex, foundIndices[RandDungIndex]);
 
                     // Spawn inside dungeon at this world position
                     DFPosition mapPixel = MapsFile.LongitudeLatitudeToMapPixel((int)dungLocation.MapTableData.Longitude, dungLocation.MapTableData.Latitude);
@@ -1006,7 +1043,9 @@ namespace RandomStartingDungeon
 
                     // Select a random dungeon location index from available list then get its location data
                     int RandDungIndex = UnityEngine.Random.Range(0, foundIndices.Length);
-                    DFLocation dungLocation = DaggerfallUnity.Instance.ContentReader.MapFileReader.GetLocation(randomRegionIndex, foundIndices[RandDungIndex]);
+                    DFRegion pickedRegion = DaggerfallUnity.Instance.ContentReader.MapFileReader.GetRegion(randomRegionIndex);
+                    DFLocation dungLocation = GetLocationSafe(pickedRegion, randomRegionIndex, foundIndices[RandDungIndex]);
+
                     dungLocationGlobal = dungLocation;
 
                     SpawnPoints[] SpawnLocations = RandomBlockLocationPicker(dungLocation);
@@ -1043,6 +1082,7 @@ namespace RandomStartingDungeon
                 {
                     Debug.Log("No Valid Dungeon Locations To Teleport To, Try Making Your Settings Less Strict.");
                 }
+                PlayerEnterExit.OnRespawnerComplete -= TeleToSpawnPoint_OnRespawnerComplete;
                 PlayerEnterExit.OnRespawnerComplete += TeleToSpawnPoint_OnRespawnerComplete;
             }
 			// Likely in a later version of this mod, make a menu system similar to the Skyrim Mod "Live Another Life" for the options and background settings possibly of a new character.
@@ -1071,6 +1111,7 @@ namespace RandomStartingDungeon
                 {
 
                 }
+
                 /* is this a main quest dungeon? */
                 if (IsMainQuestDungeon(GameManager.Instance.DungeonParent))
                     PickRandomDungeonTeleport();
@@ -1271,78 +1312,72 @@ namespace RandomStartingDungeon
             return spawnPoints;
         }
 
+        static DFLocation GetLocationSafe(DFRegion regionData, int regionIndex, int i)
+        {
+            DFLocation fromLiab = new DFLocation();
+            bool answered = false;
+            ModManager.Instance.SendModMessage("Living Iliac Bay", "GetLocation",
+                new int[] { regionIndex, i, regionData.MapTable[i].MapId },
+                (string message, object data) =>
+                {
+                    if (data is DFLocation)
+                    {
+                        fromLiab = (DFLocation)data;
+                        answered = true;
+                    }
+                });
+            return answered
+                ? fromLiab
+                : DaggerfallUnity.Instance.ContentReader.MapFileReader.GetLocation(regionIndex, i);
+
+
+            // in CollectDungeonIndicesOfType:
+            DFLocation dungLocation = GetLocationSafe(regionData, regionIndex, i);
+        }
+
         public static int[] CollectDungeonIndicesOfType(DFRegion regionData, int regionIndex)
         {
             List<int> foundLocationIndices = new List<int>();
+            MapsFile maps = DaggerfallUnity.Instance.ContentReader.MapFileReader;
+            int count = Math.Min((int)regionData.LocationCount, regionData.MapTable.Length);
 
-            // Collect all dungeon types
-            for (int i = 0; i < regionData.LocationCount; i++)
+            for (int i = 0; i < count; i++)
             {
-                // Discard all non-dungeon location types
-                if (!IsLocationType(regionData.MapTable[i].LocationType) || IsDungeonType(regionData.MapTable[i].DungeonType))
-                    continue;
-                // Discard all dungeon locations that don't comply with climate filter settings
-                DFLocation dungLocation = DaggerfallUnity.Instance.ContentReader.MapFileReader.GetLocation(regionIndex, i);
+                DFRegion.RegionMapTable table = regionData.MapTable[i];
 
-                switch (dungLocation.Climate.WorldClimate)
+                // Discard all non-dungeon location types
+                if (!IsLocationType(table.LocationType) || IsDungeonType(table.DungeonType))
+                    continue;
+
+                // Climate filter: same value DFLocation.Climate.WorldClimate holds, read from the map pixel
+                DFPosition pixel = MapsFile.LongitudeLatitudeToMapPixel(table.Longitude, table.Latitude);
+                switch (maps.GetClimateIndex(pixel.X, pixel.Y))
                 {
-                    case (int)MapsFile.Climates.Ocean:
-                        if (!oceanStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.Desert:
-                        if (!desertStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.Desert2:
-                        if (!desertHotStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.Mountain:
-                        if (!mountainStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.Rainforest:
-                        if (!rainforestStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.Swamp:
-                        if (!swampStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.Subtropical:
-                        if (!subtropicalStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.MountainWoods:
-                        if (!mountainWoodsStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.Woodlands:
-                        if (!woodlandsStartCheck)
-                            continue;
-                        break;
-                    case (int)MapsFile.Climates.HauntedWoodlands:
-                        if (!hauntedWoodlandsStartCheck)
-                            continue;
-                        break;
-                    default:
-                        break;
+                    case (int)MapsFile.Climates.Ocean: if (!oceanStartCheck) continue; break;
+                    case (int)MapsFile.Climates.Desert: if (!desertStartCheck) continue; break;
+                    case (int)MapsFile.Climates.Desert2: if (!desertHotStartCheck) continue; break;
+                    case (int)MapsFile.Climates.Mountain: if (!mountainStartCheck) continue; break;
+                    case (int)MapsFile.Climates.Rainforest: if (!rainforestStartCheck) continue; break;
+                    case (int)MapsFile.Climates.Swamp: if (!swampStartCheck) continue; break;
+                    case (int)MapsFile.Climates.Subtropical: if (!subtropicalStartCheck) continue; break;
+                    case (int)MapsFile.Climates.MountainWoods: if (!mountainWoodsStartCheck) continue; break;
+                    case (int)MapsFile.Climates.Woodlands: if (!woodlandsStartCheck) continue; break;
+                    case (int)MapsFile.Climates.HauntedWoodlands: if (!hauntedWoodlandsStartCheck) continue; break;
                 }
 
-                // Discard Main-quest Dungeons if the setting has these disabled, they are disabled by default
-                if (!questDungStartCheck && MainQuestDungeonChecker(regionIndex, dungLocation.Name))
+                string dungName = (regionData.MapNames != null && i < regionData.MapNames.Length
+                    ? regionData.MapNames[i] : null) ?? string.Empty;
+
+                // Main-quest check by MapId (DFU's own list, same one LIAB uses)
+                if (!questDungStartCheck && DaggerfallDungeon.IsMainStoryDungeon(table.MapId))
                     continue;
-                // Discard Isolated Island Dungeons With No Local Towns/Homes if the setting has these disabled, they are enabled by default
-                if (!isolatedIslandStartCheck && IsolatedIslandChecker(regionIndex, dungLocation.Name))
+                if (!isolatedIslandStartCheck && IsolatedIslandChecker(regionIndex, dungName))
                     continue;
-                // Discard Populated Island Dungeons With Local Towns/Homes if the setting has these disabled, they are enabled by default
-                if (!populatedIslandStartCheck && PopulatedIslandChecker(regionIndex, dungLocation.Name))
+                if (!populatedIslandStartCheck && PopulatedIslandChecker(regionIndex, dungName))
                     continue;
 
                 foundLocationIndices.Add(i);
             }
-
             return foundLocationIndices.ToArray();
         }
 
@@ -1451,6 +1486,9 @@ namespace RandomStartingDungeon
 
         public static bool MainQuestDungeonChecker(int regionIndex, string dungName) // Will have to do some testing with this, not sure if this will work right.
         {
+            if (string.IsNullOrEmpty(dungName))
+                return true;
+
             switch (regionIndex)
             {
                 case 31:

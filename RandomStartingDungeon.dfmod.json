@@ -13,5 +13,6 @@
         "Assets/Game/Mods/DFU-Mod_Random-Starting-Dungeon/Scripts/RandomStartingDungeon.cs",
         "Assets/Game/Mods/DFU-Mod_Random-Starting-Dungeon/Scripts/RandomStartingDungeonConsoleCommands.cs"
     ],
-    "ModPreCompile": true
+    "ModPreCompile": true,
+    "ModPatch": false
 }
