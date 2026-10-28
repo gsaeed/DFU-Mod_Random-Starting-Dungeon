@@ -891,12 +891,30 @@ namespace RandomStartingDungeon
 
         static IEnumerator ShowRandomStartPromptWhenReady()
         {
+            // 1. Wait for Living Iliac Bay (if installed)
             Mod liab = ModManager.Instance.GetMod("Living Iliac Bay");
             if (liab != null && liab.Enabled)
             {
                 while (!RandomlyGeneratedLocationsAreReady())
                     yield return new WaitForSecondsRealtime(1f);
             }
+
+            // 2. Wait until no other window is open (only the HUD) for half a second,
+            //    so other mods' start prompts are dismissed first
+            float idleSince = -1f;
+            while (true)
+            {
+                bool idle = DaggerfallUI.UIManager.TopWindow == DaggerfallUI.Instance.DaggerfallHUD
+                            && !GameManager.Instance.PlayerEnterExit.IsRespawning;
+                if (!idle)
+                    idleSince = -1f;
+                else if (idleSince < 0f)
+                    idleSince = Time.realtimeSinceStartup;
+                else if (Time.realtimeSinceStartup - idleSince >= 2f)
+                    break;
+                yield return null;
+            }
+
             ShowRandomStartPrompt();
         }
 
